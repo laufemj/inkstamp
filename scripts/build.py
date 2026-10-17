@@ -57,4 +57,6 @@ if a.overlay_scale != 1.0:
         im = cv2.imread(fn, cv2.IMREAD_UNCHANGED); s = a.overlay_scale
         cv2.imwrite(os.path.join(sd, os.path.basename(fn)), cv2.resize(im, (int(im.shape[1] * s), int(im.shape[0] * s)), interpolation=cv2.INTER_AREA))
     ink = sd
+import render
+render.main()   # note placement avoids the printed text using the 200-dpi renders (regenerated if cleaned up)
 cm.build(N, ink, a.out)
