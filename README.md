@@ -19,10 +19,11 @@
 
 <!-- Demo video: to play it inline, drag docs/demo.mp4 into this file in GitHub's web editor and put the
      github.com/user-attachments/assets/... line GitHub inserts in place of the poster block below. -->
-<p align="center">
-  <a href="docs/demo.mp4"><img src="docs/poster.png" width="760" alt="Demo video: the lecture recording plays while the professor's handwriting is written and followed, the speech is transcribed, and the ink lands on your own PDF with timestamped exam notes"></a>
-  <br><sub>40-second synthetic demo (click for the 1080p MP4), made with <a href="examples/make_video.py"><code>examples/make_video.py</code></a></sub>
-</p>
+
+
+https://github.com/user-attachments/assets/f66a5fdd-6e14-42f2-86d9-91b49430b2e8
+
+
 
 It is built for courses where the professor teaches by writing on the lecture-note PDF on an iPad (GoodNotes and similar apps) and posts the screen recordings. You give it the recordings and the PDF. You get back:
 
