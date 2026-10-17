@@ -1,6 +1,6 @@
 ---
 name: lecture-video-notes
-description: Turn recorded lecture videos (a professor writing on the lecture-note PDF on an iPad, e.g. GoodNotes screen recordings) plus the lecture-note PDF into an annotated PDF. The professor's handwriting is copied onto the pages in place, and handwritten-style margin notes record every exam-relevant remark with its video timestamp. Also writes plain-text transcripts. Use when the user gives lecture videos and a lecture PDF and asks for an annotated/필기 PDF, 강의 필기 정리, lecture transcripts, or to continue the notes with the next lectures.
+description: Turn recorded lecture videos (a professor writing on the lecture-note PDF on an iPad, e.g. GoodNotes screen recordings) plus the lecture-note PDF into an annotated PDF. The professor's handwriting is copied onto the pages in place, and handwritten-style margin notes record every exam-relevant remark with its video timestamp. Also writes plain-text transcripts. Use when the user gives lecture videos and a lecture PDF and asks for an annotated/필기 PDF, 강의 필기 정리, lecture transcripts, or to continue the notes with the next lectures. Also use it to set up this skill's environment on a new computer (환경 설정).
 ---
 
 # Lecture videos → annotated lecture-note PDF
@@ -17,9 +17,21 @@ Shorthand: `SC` = this skill's `scripts` folder. `PY` = the skill's Python: `$LE
 Run every script from the course folder, or set `LECNOTES_JOB` to the job file.
 
 ## 0. Environment (once per machine)
-If `PY` does not exist or `PY SC/doctor.py` reports missing packages or fonts, run the setup in this skill's folder:
-`powershell -ExecutionPolicy Bypass -File setup.ps1` (Windows) or `bash setup.sh` (macOS/Linux). It needs `uv`. If `uv` is missing,
-show the user the install command the script prints and ask before running it.
+Check this before anything else, on every machine. The machine is ready when `PY` exists and the last line of `PY SC/doctor.py` is
+`setup ok`. Otherwise set it up (the user may be on a fresh computer that has only Claude Code and this skill folder):
+1. **uv.** The setup scripts look for it on PATH, then in `~/.local/bin` and `~/.cargo/bin`, where the installer puts it.
+   A shell opened before the install does not see it on PATH, so there is no need to restart. If `uv` is in none of these places,
+   tell the user and ask before installing it:
+   `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"` (Windows) or
+   `curl -LsSf https://astral.sh/uv/install.sh | sh` (macOS/Linux).
+2. **Setup.** Run it in the background from this skill's folder: `powershell -ExecutionPolicy Bypass -File setup.ps1` (Windows) or
+   `bash setup.sh` (macOS/Linux). It installs a uv-managed Python 3.12 in `PY`'s venv, the packages (~150 MB), cuBLAS + cuDNN when
+   `nvidia-smi` exists (~1.3 GB more), and the fonts, and then runs `doctor.py`. On a fast connection this takes a few minutes.
+   It succeeded if it exits with code 0 and the last doctor line is `setup ok`. Re-running it is safe: finished steps are skipped.
+   If Windows PowerShell 5.1 redirects the output, it shows uv's progress messages on stderr as `NativeCommandError`. That is harmless.
+3. **Speech model.** Setup does not download the model (`mobiuslabsgmbh/faster-whisper-large-v3-turbo`, 1.6 GB). The first
+   `transcribe.py --probe-only` (section 2) downloads it into the Hugging Face cache, so the first probe takes longer.
+
 **Never use an Anaconda/conda Python**: its old msvcp140.dll makes CTranslate2 crash on Windows (access violation 0xC0000005).
 No ffmpeg or poppler is needed. PyAV decodes video and audio, and pypdfium2 renders and reads the PDF.
 

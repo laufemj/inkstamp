@@ -1,6 +1,6 @@
 """Environment report for deciding where to transcribe (local GPU / local CPU / cloud) and whether setup is complete.
 usage: python scripts/doctor.py   (no job file needed)"""
-import os, sys, platform, shutil, subprocess, importlib
+import os, sys, platform, shutil, subprocess, importlib, importlib.util
 
 def ok(flag):
     return 'ok ' if flag else 'MISSING'
@@ -29,13 +29,14 @@ def main():
         print('nvidia gpu  ' + (r.stdout.strip() or r.stderr.strip()))
     else:
         print('nvidia gpu  none found (nvidia-smi not on PATH)')
+    missing = []
     for mod in ('faster_whisper', 'ctranslate2', 'av', 'cv2', 'numpy', 'PIL', 'pypdf', 'pypdfium2', 'reportlab'):
         try:
             m = importlib.import_module(mod)
             print(f'{mod:15s}{ok(True)} {getattr(m, "__version__", "")}')
         except Exception as e:
-            print(f'{mod:15s}{ok(False)} ({type(e).__name__})')
-    import importlib.util
+            print(f'{mod:15s}{ok(False)} ({type(e).__name__}: {e})')
+            missing.append(mod)
     for mod in ('nvidia.cublas', 'nvidia.cudnn'):
         try:
             found = importlib.util.find_spec(mod) is not None
@@ -49,8 +50,16 @@ def main():
         pass
     fonts = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fonts')
     for f in ('NanumPenScript-Regular.ttf', 'NotoSansKR[wght].ttf'):
-        print(f'font        {ok(os.path.exists(os.path.join(fonts, f)))} {f}' + ('' if os.path.exists(os.path.join(fonts, f)) else '  -> python scripts/fetch_fonts.py'))
+        have = os.path.exists(os.path.join(fonts, f))
+        print(f'font        {ok(have)} {f}' + ('' if have else '  -> python scripts/fetch_fonts.py'))
+        if not have:
+            missing.append(f)
     print('next: python scripts/transcribe.py --probe-only  (from the course folder with lecnotes_job.json) measures transcription speed')
+    # last line = verdict that SKILL.md section 0 checks
+    if missing:
+        print('setup INCOMPLETE: ' + ', '.join(missing) + '  -> run setup.ps1 (Windows) / setup.sh in the skill folder')
+    else:
+        print('setup ok')
 
 if __name__ == '__main__':
     main()

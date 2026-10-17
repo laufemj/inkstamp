@@ -5,6 +5,9 @@ $ErrorActionPreference = 'Stop'
 $Skill = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Venv = if ($env:LECNOTES_VENV) { $env:LECNOTES_VENV } else { Join-Path $HOME '.lecnotes\venv' }
 $Uv = if ($env:UV) { $env:UV } else { (Get-Command uv -ErrorAction SilentlyContinue).Source }
+if (-not $Uv) {  # the uv installer puts it here, and a shell opened before the install does not have it on PATH yet
+    $Uv = @("$HOME\.local\bin\uv.exe", "$HOME\.cargo\bin\uv.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
 if (-not $Uv) {
     Write-Host 'uv is not installed. Install it (https://docs.astral.sh/uv/getting-started/installation/), then rerun:'
     Write-Host '  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'

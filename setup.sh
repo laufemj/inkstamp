@@ -5,6 +5,11 @@ set -euo pipefail
 SKILL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="${LECNOTES_VENV:-$HOME/.lecnotes/venv}"
 UV="${UV:-$(command -v uv || true)}"
+if [ -z "$UV" ]; then  # the uv installer puts it here, and a shell opened before the install does not have it on PATH yet
+  for c in "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv"; do
+    if [ -x "$c" ]; then UV="$c"; break; fi
+  done
+fi
 if [ -z "$UV" ]; then
   echo "uv is not installed. Install it (https://docs.astral.sh/uv/getting-started/installation/), then rerun:"
   echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"
