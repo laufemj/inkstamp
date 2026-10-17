@@ -17,4 +17,6 @@ Relative paths are relative to `course_dir`.
 | `keywords` | no | regex for `show_asr.py --grep` (default: Korean exam/notice words) |
 | `ui_top_frac` | no | app chrome height / frame height (default 0.1547 = GoodNotes on iPad) |
 | `overlay_base` | no | `"existing"` (default): pages continue from existing ink. `"empty"`: rebuild from blank |
+| `note_column` | no | `[x, width]` of the note column in 200-dpi px. Default: right of the printed text (document median) |
+| `extend_margin` | no | `true` (default): widen pages whose right margin is too narrow for notes |
 | `fonts_dir`, `pen_font`, `fallback_font` | no | other fonts (default: NanumPenScript + NotoSansKR in the skill's `fonts/`) |

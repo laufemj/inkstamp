@@ -10,7 +10,6 @@ from paths import W, PDF, RENDER
 import align as ad
 SRC = paths.ALIGN
 OUT = paths.RESCUE   # per-video results; overlay prefers these over align_device.json
-PW, PH = 2339, 3308
 FW, FH = 2388, 1668   # reset from the first frame read (see _set_frame_size)
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 SPLIT = '--no-split' not in sys.argv
@@ -75,9 +74,9 @@ def masked_score(fg, p, s, tx, ty, valid=None, raw=False):
     a -= a.mean(); b -= b.mean()
     return float((a * b).sum() / (np.sqrt((a * a).sum() * (b * b).sum()) + 1e-9)), float(frac)
 
-def page_rows(s, ty):
-    """frame rows [r0, r1) that show page content (page y in [0, PH])"""
-    return int(np.clip(-ty / s, 0, FH)), int(np.clip((PH - ty) / s, 0, FH))
+def page_rows(s, ty, ph):
+    """frame rows [r0, r1) that show page content (page y in [0, ph])"""
+    return int(np.clip(-ty / s, 0, FH)), int(np.clip((ph - ty) / s, 0, FH))
 
 def best_alignment(fg, pages, valid=None, raw_gray=None):
     mask = None if valid is None else valid.astype(np.uint8) * 255
@@ -167,7 +166,7 @@ def main():
             if not e.get('ok') and (RETRY or not e.get('rescue_tried')):
                 t = ad.frame_time(name)
                 prev = [p for tt, p in okpages if tt <= t][-1:]; nxt = [p for tt, p in okpages if tt >= t][:1]
-                pages = sorted({q for p in prev + nxt for q in (p - 1, p, p + 1) if 1 <= q <= 57}) or list(range(1, 58))
+                pages = sorted({q for p in prev + nxt for q in (p - 1, p, p + 1) if 1 <= q <= ad.NPAGES}) or list(range(1, ad.NPAGES + 1))
                 frame = cv2.imread(os.path.join(W, f'views_{vid}', name)); _set_frame_size(frame)
                 fg = ad.clean_gray(frame); fg[:ad.UI_TOP] = 255
                 t0 = time.time()
@@ -198,10 +197,10 @@ def main():
             e = res[name]
             if SPLIT and e.get('ok') and not e.get('split_done'):
                 s, tx, ty, p = e['scale'], e['tx'], e['ty'], e['page']
-                r0, r1 = page_rows(s, ty)
+                r0, r1 = page_rows(s, ty, ad.page_data(p)[0].shape[0])
                 top_extra = r0 - ad.CLEAR_TOP; bot_extra = FH - r1
                 for q, extra, rows in ((p - 1, top_extra, (ad.CLEAR_TOP, r0)), (p + 1, bot_extra, (r1, FH))):
-                    if extra < 220 or not (1 <= q <= 57) or f'{name}#p{q}' in res:
+                    if extra < 220 or not (1 <= q <= ad.NPAGES) or f'{name}#p{q}' in res:
                         continue
                     if frame is None:
                         frame = cv2.imread(os.path.join(W, f'views_{vid}', name)); _set_frame_size(frame)

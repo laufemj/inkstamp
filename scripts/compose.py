@@ -11,7 +11,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import Color, HexColor
 from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import RectangleObject
 
+import paths
 from paths import PDF as SRC, FONTS, PEN_FONT, FALLBACK_FONT
 for _f in (PEN_FONT, FALLBACK_FONT):
     if not os.path.exists(os.path.join(FONTS, _f)):
@@ -20,10 +22,13 @@ pdfmetrics.registerFont(TTFont('Pen', os.path.join(FONTS, PEN_FONT)))
 pdfmetrics.registerFont(TTFont('Fb', os.path.join(FONTS, FALLBACK_FONT)))
 PEN_CMAP = pdfmetrics.getFont('Pen').face.charToGlyph
 
-PAGE_W, PAGE_H = 841.89, 1190.55
 PX = 72 / 200.0
-PW, PH = 2339, 3308          # 200-dpi page pixels
-COL_X, COL_W = 1535, 730     # default right-margin column (px)
+# page geometry; reset for every page by _set_geometry() (values here = A3 page with a wide right margin)
+PAGE_W, PAGE_H = 841.89, 1190.55   # pt, including any added margin
+PW0 = PW = 2339                    # 200-dpi px width of the original page / of the (possibly widened) page
+PH = 3308
+COL_X, COL_W = 1535, 730           # right-margin note column (px)
+NOTE_W = 730                       # preferred note-column width; narrower natural margins get the page widened
 NOTE = HexColor('#0f5132')
 STAR = HexColor('#c0392b')
 BOX_BG = Color(0.93, 0.97, 0.93, alpha=0.78)
@@ -141,21 +146,22 @@ def draw_note(c, x_px, y_px, text, size, width_px, color=NOTE, box=False, title=
         y -= lh
 
 class PagePlacer2D:
-    """2-D occupancy map (200-dpi px, downsampled by DS) seeded from the ink overlay."""
+    """2-D occupancy map (200-dpi px, downsampled by DS) seeded from the PDF's own text and the ink overlay."""
     DS = 8
     def __init__(self, ink_png, page_png=None):
         self.occ = np.zeros((PH // self.DS + 1, PW // self.DS + 1), dtype=bool)
         if page_png and os.path.exists(page_png):   # the PDF's own text/figures are occupied too
             g = cv2.imread(page_png, cv2.IMREAD_GRAYSCALE)
-            m = cv2.dilate((g < 200).astype(np.uint8), np.ones((25, 25), np.uint8))
-            self.occ |= cv2.resize(m, (self.occ.shape[1], self.occ.shape[0]), interpolation=cv2.INTER_AREA) > 0
+            self._paint(cv2.dilate((g < 200).astype(np.uint8), np.ones((25, 25), np.uint8)))
         if ink_png and os.path.exists(ink_png):
             a = cv2.imread(ink_png, cv2.IMREAD_UNCHANGED)[:, :, 3]
-            m = (a > 60).astype(np.uint8)
-            m = cv2.dilate(m, np.ones((21, 21), np.uint8))
-            small = cv2.resize(m, (self.occ.shape[1], self.occ.shape[0]), interpolation=cv2.INTER_AREA) > 0
-            self.occ |= small
+            self._paint(cv2.dilate((a > 60).astype(np.uint8), np.ones((21, 21), np.uint8)))
         self.occ[(PH - 110) // self.DS:, :] = True
+    def _paint(self, m):
+        """mask of the original page (PW0 x PH px) -> left part of the grid (the grid may be wider: added margin)"""
+        small = cv2.resize(m, (m.shape[1] // self.DS + 1, m.shape[0] // self.DS + 1), interpolation=cv2.INTER_AREA) > 0
+        hh, ww = min(small.shape[0], self.occ.shape[0]), min(small.shape[1], self.occ.shape[1])
+        self.occ[:hh, :ww] |= small[:hh, :ww]
     def free(self, x0, y0, x1, y1):
         ds = self.DS
         sub = self.occ[max(0, y0 // ds): y1 // ds + 1, max(0, x0 // ds): x1 // ds + 1]
@@ -186,6 +192,41 @@ class PagePlacer2D:
 
 COLUMN_CONFIGS = [(COL_X, COL_W), (1860, 405), (1535, 420), (1535, 300), (1980, 290)]
 FALLBACK_CONFIGS = [(215, 1300), (215, 2050), (760, 1500)]   # blank areas in the body (below/between text), last resort
+MEMO_X, MEMO_W = 215, 1900
+
+def _text_right_edge(render_png, pw0, ph):
+    """rightmost x (px) of the printed text/figures, ignoring the top/bottom 6 % (running heads, page numbers)"""
+    if not render_png or not os.path.exists(render_png):
+        return int(0.63 * pw0)
+    g = cv2.imread(render_png, cv2.IMREAD_GRAYSCALE)
+    dark = g[int(0.06 * ph): int(0.94 * ph)] < 160
+    cols = np.nonzero(dark.sum(axis=0) > max(3, 0.002 * dark.shape[0]))[0]
+    return int(cols.max()) if cols.size else int(0.63 * pw0)
+
+def _set_geometry(w_pt, h_pt, right_edge):
+    """page size from the PDF; note column right of the printed text. If that margin is narrower than ~NOTE_W the page
+    is widened on the right (job "extend_margin": false to disable). Job "note_column": [x, width] fixes the column.
+    Returns the added width in pt."""
+    global PAGE_W, PAGE_H, PW0, PW, PH, COL_X, COL_W, COLUMN_CONFIGS, FALLBACK_CONFIGS, MEMO_X, MEMO_W
+    PW0, PH = round(w_pt / PX), round(h_pt / PX)
+    fixed = paths.J.get('note_column')
+    if fixed:
+        COL_X, COL_W = int(fixed[0]), int(fixed[1])
+    else:
+        COL_X = right_edge + 65
+        COL_W = PW0 - COL_X - 70
+    extra = 0
+    if not fixed and COL_W < NOTE_W - 130 and paths.J.get('extend_margin', True):
+        extra = COL_X + NOTE_W + 70 - PW0
+        COL_W = NOTE_W
+    PW = PW0 + extra
+    PAGE_W, PAGE_H = w_pt + extra * PX, h_pt
+    s = PW0 / 2339
+    COLUMN_CONFIGS = [(COL_X, COL_W), (COL_X + 325, COL_W - 325), (COL_X, 420), (COL_X, 300), (COL_X + 445, COL_W - 440)]
+    COLUMN_CONFIGS = [(x, w) for x, w in COLUMN_CONFIGS if w >= 250]
+    FALLBACK_CONFIGS = [(round(215 * s), round(1300 * s)), (round(215 * s), round(2050 * s)), (round(760 * s), round(1500 * s))]
+    MEMO_X, MEMO_W = round(215 * s), round(1900 * s) + extra
+    return extra * PX
 
 def place_notes(c, page, notes, ink_png):
     from paths import RENDER
@@ -211,12 +252,12 @@ def place_notes(c, page, notes, ink_png):
                 h = note_height_px(n['text'], size, w, n.get('box', False), n.get('title'))
                 y = pl.find(x0, w, n['y'], h)
                 if y is not None:
-                    d = y - n['y'] + (0 if w >= 700 else 350 + 0.4 * h) + (size0 - size) * 60
+                    d = y - n['y'] + (0 if w >= COL_W - 30 else 350 + 0.4 * h) + (size0 - size) * 60
                     if best is None or d < best[0]:
                         best = (d, x0, w, y, h, size)
                     break
                 size -= 0.5
-            if best is not None and best[0] <= 120 and best[2] >= 700:
+            if best is not None and best[0] <= 120 and best[2] >= COL_W - 30:
                 break
         if best is None:
             x0, w = configs[0]; size = size0
@@ -231,16 +272,17 @@ def place_notes(c, page, notes, ink_png):
         report.append(f'  page {page}: x={x0} w={w} y={y} (want {n["y"]}) h={int(h)} size={size} {n["text"][:26]!r}{flag}')
     return report
 
-MEMO_X, MEMO_W = 215, 1900
 def _memo_page(writer, pno, notes):
     """blank page after page pno holding notes that did not fit its margins (NOTES key 'pno+')"""
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(PAGE_W, PAGE_H))
-    draw_note(c, MEMO_X, 110, f'{pno}쪽 메모 — {pno}쪽 여백이 교수님 필기로 가득 차서 여기에 적음', 15, MEMO_W)
+    head = (f'{pno}쪽 메모 — {pno}쪽 여백이 교수님 필기로 가득 차서 여기에 적음' if paths.LANGUAGE == 'ko'
+            else f'Page {pno} memo — the margins of page {pno} are full of the professor’s writing')
+    draw_note(c, MEMO_X, 110, head, 15, MEMO_W)
     c.saveState(); c.setStrokeColor(BOX_LINE); c.setLineWidth(1); c.line(*px(MEMO_X, 190), *px(MEMO_X + MEMO_W, 190)); c.restoreState()
     notes = [dict(n, x=n.get('x', MEMO_X), width=n.get('width', MEMO_W), y=max(230, n['y'])) for n in sorted(notes, key=lambda n: n['y'])]
     report = place_notes(c, f'{pno}+', notes, None)
-    c.setFont('Fb', 9); c.setFillColor(NOTE); c.drawCentredString(PAGE_W / 2, 28, f'({pno}쪽 메모)')
+    c.setFont('Fb', 9); c.setFillColor(NOTE); c.drawCentredString(PAGE_W / 2, 28, f'({pno}쪽 메모)' if paths.LANGUAGE == 'ko' else f'(memo, page {pno})')
     c.showPage(); c.save(); buf.seek(0)
     writer.add_page(PdfReader(buf).pages[0])
     return report
@@ -249,8 +291,19 @@ def build(notes_by_page, ink_dir, out_path, extra_draw=None):
     reader = PdfReader(SRC)
     writer = PdfWriter()
     report = []
+    from paths import RENDER
+    # one note column for the whole document: median right edge of the printed text over all pages
+    edges = [_text_right_edge(os.path.join(RENDER, f'page{k + 1}.png'), round(float(pg.mediabox.width) / PX), round(float(pg.mediabox.height) / PX))
+             for k, pg in enumerate(reader.pages)] if not paths.J.get('note_column') else [0]
+    right_edge = int(np.median(edges))
     for i, page in enumerate(reader.pages):
         pno = i + 1
+        mb = page.mediabox
+        extra = _set_geometry(float(mb.width), float(mb.height), right_edge)
+        if extra:   # widen the page on the right for the notes; the original content keeps its position
+            for box in ('mediabox', 'cropbox'):
+                r = getattr(page, box)
+                setattr(page, box, RectangleObject([float(r.left), float(r.bottom), float(r.right) + extra, float(r.top)]))
         ink_png = f'{ink_dir}/ink_page{pno}.png'
         has_ink = os.path.exists(ink_png)
         notes = notes_by_page.get(pno, [])
@@ -263,13 +316,16 @@ def build(notes_by_page, ink_dir, out_path, extra_draw=None):
         c = canvas.Canvas(buf, pagesize=(PAGE_W, PAGE_H))
         if has_ink:
             img = Image.open(ink_png).convert('RGBA')
-            c.drawImage(ImageReader(img), 0, 0, width=PAGE_W, height=PAGE_H, mask='auto')
+            c.drawImage(ImageReader(img), 0, 0, width=PW0 * PX, height=PAGE_H, mask='auto')
         if notes:
             report += place_notes(c, pno, notes, ink_png if has_ink else None)
         if extra_draw:
             extra_draw(c, pno)
         c.showPage(); c.save(); buf.seek(0)
-        page.merge_page(PdfReader(buf).pages[0])
+        if float(mb.left) or float(mb.bottom):
+            page.merge_translated_page(PdfReader(buf).pages[0], float(mb.left), float(mb.bottom))
+        else:
+            page.merge_page(PdfReader(buf).pages[0])
         writer.add_page(page)
         memo = notes_by_page.get(f'{pno}+')
         if memo:   # margins of page pno were full -> blank memo page inserted right after it
