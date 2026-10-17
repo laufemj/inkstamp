@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/icon.svg" width="112" alt="inkstamp icon: a fountain-pen nib with a play button as its vent, writing a line of ink">
+</p>
+
 <h1 align="center">inkstamp</h1>
 
 <p align="center">
@@ -13,9 +17,11 @@
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
 </p>
 
+<!-- Demo video: to play it inline, drag docs/demo.mp4 into this file in GitHub's web editor and put the
+     github.com/user-attachments/assets/... line GitHub inserts in place of the poster block below. -->
 <p align="center">
-  <img src="docs/demo.gif" width="760" alt="Animated demo: the recording, the transcript, ink lifted onto the page, margin notes, and the checks">
-  <br><sub>25-second synthetic demo, made with <a href="examples/make_video.py"><code>examples/make_video.py</code></a> · <a href="docs/demo.mp4">MP4 version</a></sub>
+  <a href="docs/demo.mp4"><img src="docs/poster.png" width="760" alt="Demo video: the lecture recording plays while the professor's handwriting is written and followed, the speech is transcribed, and the ink lands on your own PDF with timestamped exam notes"></a>
+  <br><sub>40-second synthetic demo (click for the 1080p MP4), made with <a href="examples/make_video.py"><code>examples/make_video.py</code></a></sub>
 </p>
 
 It is built for courses where the professor teaches by writing on the lecture-note PDF on an iPad (GoodNotes and similar apps) and posts the screen recordings. You give it the recordings and the PDF. You get back:
@@ -46,6 +52,7 @@ When new recordings come out, it continues the same PDF, so by exam time you hav
 - [Limitations](#limitations)
 - [Evaluations](#evaluations)
 - [Repository layout](#repository-layout)
+- [Contributors](#contributors)
 - [License](#license)
 
 ## Why
@@ -314,12 +321,20 @@ scripts/                 the pipeline (transcribe, extract_views, align, rescue_
   doctor.py              environment report (last line: setup ok / INCOMPLETE)
   cloud/whisper_onnx.py  CPU-only transcription for machines where CTranslate2 does not work
 examples/make_demo.py    synthetic end-to-end demo and installation check
-examples/make_video.py   renders docs/demo.mp4 and docs/demo.gif from the synthetic demo
+examples/make_video.py   renders docs/demo.mp4 and docs/poster.png from the synthetic demo (fonts: Instrument Serif, Inter, JetBrains Mono)
+examples/demo_fonts.py   downloads the demo and video fonts (and Caveat for the synthetic handwriting) on first use
+examples/make_icon.py    draws docs/icon.svg and docs/icon.png
 setup.ps1, setup.sh      one-time environment setup
 ```
+
+## Contributors
+
+- **[laufemj](https://github.com/laufemj)**: author and maintainer
+- **Claude** (Anthropic), working in Claude Code: pair programmer on the pipeline scripts, the evaluations, the documentation and the demo video
 
 ## License
 
 - Code: [MIT](LICENSE)
 - Fonts, downloaded during setup and not included here: [Nanum Pen Script](https://fonts.google.com/specimen/Nanum+Pen+Script) and [Noto Sans KR](https://fonts.google.com/noto/specimen/Noto+Sans+KR), both under the SIL Open Font License 1.1
 - Speech model: [`mobiuslabsgmbh/faster-whisper-large-v3-turbo`](https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo), under its own license
+- Demo and video fonts, downloaded by `examples/demo_fonts.py` and not included here: [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif), [Inter](https://fonts.google.com/specimen/Inter), [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) and [Caveat](https://fonts.google.com/specimen/Caveat) (the synthetic handwriting), all under the SIL Open Font License 1.1

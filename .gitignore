@@ -1,6 +1,7 @@
 # downloaded by scripts/fetch_fonts.py (SIL OFL 1.1, not redistributed here)
 fonts/*.ttf
 fonts/*.txt
+fonts/video/
 __pycache__/
 *.pyc
 # never commit course material or outputs

@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from demo_fonts import font_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(HERE)
@@ -93,9 +94,25 @@ def ink_layer(shape):
     def stroke(fn, color, **kw):
         tmp = np.zeros((h, w, 3), np.uint8); fn(tmp, **kw)
         m = tmp.any(axis=2); ink[m, :3] = color; ink[m, 3] = 255
+    hand_font = font_path('hand', fallback=os.path.join(SKILL, 'fonts', 'NanumPenScript-Regular.ttf'))
+    def hand(text, x, base, size, angle, color):
+        """handwritten words (Caveat, slightly tilted), baseline starting at (x, base)"""
+        f = ImageFont.truetype(hand_font, size)
+        try:
+            f.set_variation_by_axes([620])
+        except Exception:
+            pass
+        img = Image.new('L', (int(f.getlength(text)) + 2 * size, 3 * size), 0)
+        ImageDraw.Draw(img).text((size, 2 * size), text, font=f, fill=255, anchor='ls')
+        a = np.array(img.rotate(angle, resample=Image.BICUBIC, center=(size, 2 * size)))
+        x0, y0 = x - size, base - 2 * size
+        ys, xs = slice(max(0, y0), min(h, y0 + a.shape[0])), slice(max(0, x0), min(w, x0 + a.shape[1]))
+        sub = a[ys.start - y0: ys.stop - y0, xs.start - x0: xs.stop - x0]
+        region = ink[ys, xs]; m = sub > 0
+        region[m, :3] = color; region[m, 3] = np.maximum(region[m, 3], sub[m])
     fy = ypx('f')
     stroke(lambda im: cv2.ellipse(im, (w // 2 - 28, fy - 16), (430, 64), 0, 0, 360, (255, 255, 255), 6, cv2.LINE_AA), (40, 40, 210))
-    stroke(lambda im: cv2.putText(im, 'must memorize!', (int(w * 0.70), fy - 95), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.0, (255, 255, 255), 5, cv2.LINE_AA), (200, 80, 30))
+    hand('must memorize!', int(w * 0.70), fy - 95, 96, 4, (200, 80, 30))
     y_n = ypx('surface with outward')
     a0, a1 = xspan('surface with outward', 'outward unit normal n')
     hl = np.zeros((h, w, 3), np.uint8); cv2.rectangle(hl, (a0 - 6, y_n - 36), (a1 + 6, y_n + 10), (255, 255, 255), -1)
@@ -107,12 +124,12 @@ def ink_layer(shape):
         a = np.deg2rad(ang); p0 = (int(cx + r * np.cos(a)), int(cy + r * np.sin(a))); p1 = (int(cx + 1.6 * r * np.cos(a)), int(cy + 1.6 * r * np.sin(a)))
         stroke(lambda im: cv2.arrowedLine(im, p0, p1, (255, 255, 255), 4, cv2.LINE_AA, tipLength=0.3), (200, 80, 30))
     y2 = ypx('Example 2.')
-    stroke(lambda im: cv2.putText(im, 'exam!', (int(w * 0.80), y2 + 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.4, (255, 255, 255), 6, cv2.LINE_AA), (30, 30, 220))
+    hand('exam!', int(w * 0.80), y2 + 10, 112, -5, (30, 30, 220))
     yx = ypx('Exercise.')
     t_ex = next(t for y, k, t in LINES if t.startswith('Exercise.'))
     x_end = xspan('Exercise.', t_ex)[1]
     stroke(lambda im: cv2.line(im, (int(LM * PT), yx + 14), (x_end, yx + 14), (255, 255, 255), 5, cv2.LINE_AA), (200, 80, 30))
-    stroke(lambda im: cv2.putText(im, 'do it yourself', (x_end + 30, yx + 6), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1.35, (255, 255, 255), 4, cv2.LINE_AA), (200, 80, 30))
+    hand('do it yourself', x_end + 30, yx + 8, 74, 2, (200, 80, 30))
     return ink
 
 def laser(frame, p0, p1):
