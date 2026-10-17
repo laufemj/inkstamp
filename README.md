@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/icon.svg" width="112" alt="inkstamp icon: a fountain-pen nib with a play button as its vent, writing a line of ink">
+  <img src="docs/icon.svg" width="112" alt="inkstamp icon: a fountain-pen nib writing a line of ink, with a play button on top">
 </p>
 
 <h1 align="center">inkstamp</h1>
@@ -17,13 +17,12 @@
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
 </p>
 
-<!-- Demo video: to play it inline, drag docs/demo.mp4 into this file in GitHub's web editor and put the
-     github.com/user-attachments/assets/... line GitHub inserts in place of the poster block below. -->
-
+<!-- Demo video: docs/demo.mp4 (made by examples/make_video.py), uploaded through GitHub's web editor so it plays inline.
+     To update it, drag the new file into this spot in the editor and replace the URL below. -->
 
 https://github.com/user-attachments/assets/f66a5fdd-6e14-42f2-86d9-91b49430b2e8
 
-
+<p align="center"><sub>40-second synthetic demo: the page, the handwriting and the remarks are made up (<a href="examples/make_video.py"><code>examples/make_video.py</code></a>)</sub></p>
 
 It is built for courses where the professor teaches by writing on the lecture-note PDF on an iPad (GoodNotes and similar apps) and posts the screen recordings. You give it the recordings and the PDF. You get back:
 
