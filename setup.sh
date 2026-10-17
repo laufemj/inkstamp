@@ -14,6 +14,10 @@ fi
 PY="$VENV/bin/python"
 [ -x "$PY" ] || "$UV" venv --python 3.12 --python-preference only-managed --seed "$VENV"
 "$UV" pip install --python "$PY" -r "$SKILL/requirements.txt"
+if command -v nvidia-smi >/dev/null 2>&1; then
+  # GPU transcription: CTranslate2 needs cuBLAS + cuDNN 9 for CUDA 12 (if they fail, transcription falls back to CPU)
+  "$UV" pip install --python "$PY" nvidia-cublas-cu12 'nvidia-cudnn-cu12==9.*'
+fi
 "$PY" "$SKILL/scripts/fetch_fonts.py"
 "$PY" "$SKILL/scripts/doctor.py"
 echo

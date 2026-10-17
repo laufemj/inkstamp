@@ -14,6 +14,10 @@ if (-not $Uv) {
 $Py = Join-Path $Venv 'Scripts\python.exe'
 if (-not (Test-Path $Py)) { & $Uv venv --python 3.12 --python-preference only-managed --seed $Venv }
 & $Uv pip install --python $Py -r (Join-Path $Skill 'requirements.txt')
+if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
+    # GPU transcription: CTranslate2 needs cuBLAS + cuDNN 9 for CUDA 12 (if they fail, transcription falls back to CPU)
+    & $Uv pip install --python $Py nvidia-cublas-cu12 'nvidia-cudnn-cu12==9.*'
+}
 & $Py (Join-Path $Skill 'scripts\fetch_fonts.py')
 & $Py (Join-Path $Skill 'scripts\doctor.py')
 Write-Host ''

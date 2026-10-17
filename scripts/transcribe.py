@@ -14,6 +14,28 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
 here = paths.W
+
+def _add_cuda_libs():
+    """cuBLAS/cuDNN from the pip wheels nvidia-cublas-cu12 / nvidia-cudnn-cu12 (setup installs them when an NVIDIA GPU
+    exists) -> make their DLLs / .so files findable for CTranslate2, also in the probe/worker subprocesses"""
+    import importlib.util
+    dirs = []
+    for mod in ('nvidia.cublas', 'nvidia.cudnn'):
+        try:
+            spec = importlib.util.find_spec(mod)
+        except (ImportError, ValueError):
+            spec = None
+        for base in (list(spec.submodule_search_locations or []) if spec else []):
+            for sub in ('bin', 'lib'):
+                if os.path.isdir(os.path.join(base, sub)):
+                    dirs.append(os.path.join(base, sub))
+    if dirs:
+        var = 'PATH' if os.name == 'nt' else 'LD_LIBRARY_PATH'
+        os.environ[var] = os.pathsep.join(dirs + [os.environ.get(var, '')])
+        if os.name == 'nt':
+            for d in dirs:
+                os.add_dll_directory(d)
+_add_cuda_libs()
 LOG = open(os.path.join(here, 'transcribe_log.txt'), 'a', encoding='utf-8', buffering=1)
 faulthandler.enable(file=LOG, all_threads=False)
 CFG = os.path.join(here, 'ct2_config.json')

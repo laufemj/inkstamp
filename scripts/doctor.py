@@ -35,6 +35,13 @@ def main():
             print(f'{mod:15s}{ok(True)} {getattr(m, "__version__", "")}')
         except Exception as e:
             print(f'{mod:15s}{ok(False)} ({type(e).__name__})')
+    import importlib.util
+    for mod in ('nvidia.cublas', 'nvidia.cudnn'):
+        try:
+            found = importlib.util.find_spec(mod) is not None
+        except (ImportError, ValueError):
+            found = False
+        print(f'{mod:15s}{"ok " if found else "-  "} (needed only for GPU transcription)')
     try:
         import ctranslate2
         print(f'cuda devs   {ctranslate2.get_cuda_device_count()} (CTranslate2)')
