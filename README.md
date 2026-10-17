@@ -20,7 +20,7 @@
 
 ## 설치
 ```bash
-git clone https://github.com/<OWNER>/lecture-video-notes ~/.claude/skills/lecture-video-notes
+git clone https://github.com/laufemj/lecture-video-notes ~/.claude/skills/lecture-video-notes
 cd ~/.claude/skills/lecture-video-notes
 bash setup.sh                                          # macOS / Linux
 powershell -ExecutionPolicy Bypass -File setup.ps1     # Windows
