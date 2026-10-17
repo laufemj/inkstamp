@@ -1,9 +1,9 @@
 ---
-name: lecture-video-notes
+name: inkstamp
 description: Turns recorded lecture videos (a professor writing on the lecture-note PDF on an iPad, e.g. GoodNotes screen recordings) plus the lecture-note PDF into an annotated PDF. The professor's handwriting is copied onto the pages in place, and handwritten-style margin notes record every exam-relevant remark with its video timestamp. Also writes plain-text transcripts. Use when the user gives lecture videos and a lecture PDF and asks for an annotated/필기 PDF, 강의 필기 정리, lecture transcripts, or to continue the notes with the next lectures. Also use it to set up this skill's environment on a new computer (환경 설정).
 ---
 
-# Lecture videos → annotated lecture-note PDF
+# inkstamp: lecture videos → annotated lecture-note PDF
 
 Pipeline (all scripts in `scripts/`, all read one job file `lecnotes_job.json` in the course folder):
 
@@ -46,6 +46,8 @@ No ffmpeg or poppler is needed. PyAV decodes video and audio, and pypdfium2 rend
 - Write `<course_dir>/lecnotes_job.json` (see `references/job_example.json`, fields in `references/job_fields.md`):
   `course_dir`, `lecture_pdf` (the clean PDF = alignment target), `out_pdf`, `videos` (key/file/date in lecture order),
   `work_dir`, `min_page`, `language` (Whisper code, default `ko`), optional `asr_fixes` and `keywords`.
+- Before transcribing, set `hotwords`: about 25 course terms as they are spoken, taken from the PDF's headings and key words
+  (e.g. 푸리에 급수, 파스발 항등식, 체비쇼프 다항식, Kreyszig). In one lecture this cut term mishearings from 52 to 11.
 - **Continuing an earlier run:** keep the same `work_dir`. Its `overlay/`, `notes/`, and `align*.json` are the saved state.
   List only the NEW videos and set `min_page` to the page where they start. That page is in the previous run's last
   "※ Lecture X 영상은 여기…에서 끝남" box. Pages before `min_page` are untouched, and later pages continue from their existing ink.
@@ -77,10 +79,14 @@ PY SC/overlay.py && PY SC/clean_specks.py <pages...>
 ```
 - Check the last lines of `rescue_align.py` (`ok n / n`). Leftover failures are usually views with no printed text.
 - Look at `work/overlay/debug_page{p}.jpg` for every touched page: ink in place, nothing duplicated or shifted.
-- GoodNotes **laser pointer** strokes (glowing, fading) are dropped automatically by their soft glow, except when a stroke crosses
-  real ink and merges with it (4 of ~160 strokes in a 7-lecture run). For a glowing red line on a debug image, open the source frame
-  and check the toolbar (laser mode shows only "• ~" instead of the color palette), then `PY SC/erase_laser.py <page> x0 y0 x1 y1`
-  with a tight box in page px (debug px × 2). It keeps a backup and redraws the debug image; look at the result.
+- GoodNotes **laser pointer** strokes (glowing, fading) are dropped automatically by their soft glow, but not all of them: a stroke
+  that crosses real ink merges with it and stays (4 of ~160 in a 7-lecture run). A leftover is not automatically an error, because
+  the laser can be a meaningful mark: what the professor circled or underlined while stressing it. For each glowing red line on a
+  debug image, open the source frame (laser mode: the toolbar shows only "• ~" instead of the color palette) and read what was said then.
+  - It marks something worth knowing: keep it, and say in the note what was pointed at and why.
+  - It is only the pointer passing over the page: `PY SC/erase_laser.py <page> x0 y0 x1 y1` with a tight box in page px
+    (debug px × 2). It keeps a backup and redraws the debug image; look at the result. If real red ink lost pixels, copy
+    `overlay/backup/ink_page<p>.png` back and retry with a tighter box (or several small ones).
 - Frames are assumed to be iPad screen recordings: app chrome = top `ui_top_frac` (0.1547) of the frame. Adjust for other apps.
 
 ## 4. Notes (your work: the part the user cares most about)
@@ -89,7 +95,11 @@ debug images and frames, then write `work/notes/notes_KEY.py`. Videos are indepe
 (or per pair) drafts them in parallel as each transcript finishes. Give each one the guide, two finished notes files as style examples
 (first run: the guide's example), the key, date, length, its pages (from `align_rescue.json`), the course's exam rules (a keyword pass
 over all videos first finds them), the untrusted-material paragraph above, its own scratch folder, and permission to run scratch
-builds plus `render_check.py` to fix its own placement. Then review every draft yourself:
+builds plus `render_check.py` to fix its own placement. Model and effort follow what the user wants (measured trade-offs in
+`evals/README.md`): by default the session's model at effort **high** (as good as xhigh with ~64% of the tokens; low cites only wide
+time ranges). If the user wants it cheaper, use Sonnet at medium: accurate, but with coarser timestamps. Never use Haiku for notes,
+because it misread the board in testing.
+Then review every draft yourself:
 - `PY SC/check_quotes.py` lists every “quoted” piece that is not in the transcript (after `asr_fixes`). Each one must be an
   ASR correction you agree with, or be fixed. Board and printed text must use ‘ ’, not “ ”.
 - Grep the transcript for exam words and make sure each hit is in the notes or deliberately left out.

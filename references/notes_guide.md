@@ -61,6 +61,9 @@ def patch(N):   # optional: edit notes merged from EARLIER files (runs before th
 - Pages no video covered: add a small box saying so (e.g. "※ 18쪽은 어느 영상에서도 다루지 않음").
 - Transcripts are ASR output and contain mishearings ("저평면"=접평면, "공면"=곡면, "뺑갈/뿌엥까레"=푸앵카레).
   Fix them from context and the PDF, and never invent anything. If unsure, leave it out or mark it.
+- Write only what the lecture gives: speech, board and the printed notes. Add no outside facts, even true ones
+  (in one test a note added a mathematician's nationality the professor had stated wrongly). If the professor misspeaks
+  and the PDF or the board shows it, write both and mark "※ 확인 필요".
 
 ## Checking
 `python scripts/build.py --check-only` → per file: pages, note count, unsupported characters.

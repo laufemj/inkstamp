@@ -5,9 +5,11 @@ __pycache__/
 *.pyc
 # never commit course material or outputs
 *.mp4
+!docs/*.mp4
 *.mov
 *.flac
 *.pdf
 *.jsonl
+!evals/fixtures/*.jsonl
 lecnotes_job.json
 _claude_work/

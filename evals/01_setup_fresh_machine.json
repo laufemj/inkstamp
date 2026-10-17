@@ -1,0 +1,14 @@
+{
+  "skills": ["inkstamp"],
+  "query": "이 컴퓨터에 inkstamp 스킬 환경 설정해줘",
+  "files": [],
+  "setup": "A computer with Claude Code and this skill folder, but no ~/.lecnotes and no uv.",
+  "expected_behavior": [
+    "Checks readiness first with the skill's Python and doctor.py, and does not assume packages are installed",
+    "Finds that uv is missing, shows the official install command and asks before running it",
+    "After uv is installed, runs setup.ps1 / setup.sh in the background without restarting the shell (the script finds uv in ~/.local/bin)",
+    "Treats the run as successful only when it exits with code 0 and the last doctor line is 'setup ok'",
+    "Does not download the speech model during setup, and says that the first transcription speed test will",
+    "Reports what was installed and whether an NVIDIA GPU / CUDA was detected"
+  ]
+}

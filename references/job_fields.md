@@ -13,6 +13,7 @@ Relative paths are relative to `course_dir`.
 | `work_dir` | no | working + state folder (default `_claude_work`). Keep it between runs |
 | `min_page` | no | first page this run may change (default 1). Earlier pages keep their ink |
 | `language` | no | Whisper language code of the lectures (default `ko`) |
+| `hotwords` | no | course terms as spoken, comma-separated, passed to Whisper as hint phrases (about 25 terms from the PDF's headings and key words, e.g. `"푸리에 급수, 푸리에 변환, 파스발 항등식, 체비쇼프 다항식, Kreyszig, 공수1"`). It cut known term mishearings from 52 to 11 on a 55-min lecture and from 12 to 3 on a 19-min one, at the same speed. Set it before transcribing |
 | `asr_fixes` | no | `[["misheard", "correct"], ...]` applied when writing transcripts |
 | `keywords` | no | regex for `show_asr.py --grep` (default: Korean exam/notice words) |
 | `ui_top_frac` | no | app chrome height / frame height (default 0.1547 = GoodNotes on iPad) |

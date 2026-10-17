@@ -1,0 +1,13 @@
+{
+  "skills": ["inkstamp"],
+  "query": "다음 강의 영상 두 개로 필기 이어서 해줘",
+  "files": ["<course folder> after a finished run (lecnotes_job.json, _claude_work/, the annotated PDF)", "two new recordings"],
+  "setup": "Run scenario 02 first, then add the next two recordings to the course folder.",
+  "expected_behavior": [
+    "Keeps the same work_dir and lists only the two new videos in the job",
+    "Sets min_page to the page named in the previous run's '영상은 여기…에서 끝남' box",
+    "Leaves pages before min_page unchanged (ink and notes)",
+    "The first new notes file's patch(N) updates the page-1 guide title and removes the old end box and the now-covered '아직 다루지 않음' boxes",
+    "The last new video gets a new end box; the output PDF continues the same document"
+  ]
+}

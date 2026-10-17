@@ -1,0 +1,13 @@
+{
+  "skills": ["inkstamp"],
+  "query": "필기 PDF 3쪽에 빨갛게 빛나는 선이 남아 있어. 확인해줘",
+  "files": ["<course folder> after a run whose overlay kept a laser stroke that crosses real ink"],
+  "setup": "Any finished run with a glowing red leftover on a debug page (a laser stroke drawn across real ink).",
+  "expected_behavior": [
+    "Opens the source frame and confirms laser mode (toolbar shows only '• ~') before touching the ink",
+    "Reads what was said at that time and decides whether the mark is meaningful (what the professor pointed at while stressing it) or just the pointer passing",
+    "Meaningful: keeps the mark and makes sure a note says what was pointed at and why",
+    "Not meaningful: runs erase_laser.py with a tight box, checks the redrawn debug image, and confirms the real ink around it is intact",
+    "Rebuilds the PDF and tells the user where the backup of the original ink is"
+  ]
+}

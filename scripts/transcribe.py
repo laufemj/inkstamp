@@ -103,7 +103,8 @@ def worker(cfg, order, model_path):
         with open(out + '.part', 'w', encoding='utf-8') as f:
             for a, b in zip(cuts[:-1], cuts[1:]):
                 off = a / 16000
-                segs, info = pipe.transcribe(audio[a:b], language=paths.LANGUAGE, batch_size=(8 if cfg.get('device') == 'cuda' else 4), beam_size=1)
+                segs, info = pipe.transcribe(audio[a:b], language=paths.LANGUAGE, batch_size=(8 if cfg.get('device') == 'cuda' else 4), beam_size=1,
+                                             hotwords=paths.J.get('hotwords') or None)   # course terms: far fewer mishearings (job_fields.md)
                 for s in segs:
                     f.write(json.dumps({'start': round(s.start + off, 2), 'end': round(s.end + off, 2), 'text': s.text.strip()}, ensure_ascii=False) + chr(10)); f.flush()
                     msg = 'Lecture %s: %5.1f / %.1f min (%.0f s elapsed)' % (n, (s.end + off) / 60, dur / 60, time.time() - t0)

@@ -1,10 +1,26 @@
-# lecture-video-notes
+<h1 align="center">inkstamp</h1>
 
-A [Claude Code](https://claude.com/claude-code) skill that turns lecture recordings into an annotated copy of the lecture notes.
+<p align="center">
+  <b>Lecture recordings + the lecture-note PDF → one annotated PDF</b><br>
+  A <a href="https://claude.com/claude-code">Claude Code</a> skill for courses taught by writing on the lecture notes on an iPad
+</p>
+
+<p align="center">
+  <img alt="Claude Code skill" src="https://img.shields.io/badge/Claude%20Code-skill-cc785c">
+  <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776ab">
+  <img alt="Windows, macOS, Linux" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-555555">
+  <img alt="NVIDIA GPU optional" src="https://img.shields.io/badge/NVIDIA%20GPU-optional-76b900">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
+</p>
+
+<p align="center">
+  <img src="docs/demo.gif" width="760" alt="Animated demo: the recording, the transcript, ink lifted onto the page, margin notes, and the checks">
+  <br><sub>25-second synthetic demo, made with <a href="examples/make_video.py"><code>examples/make_video.py</code></a> · <a href="docs/demo.mp4">MP4 version</a></sub>
+</p>
 
 It is built for courses where the professor teaches by writing on the lecture-note PDF on an iPad (GoodNotes and similar apps) and posts the screen recordings. You give it the recordings and the PDF. You get back:
 
-- **the professor's handwriting on your own copy of the PDF**, in exactly the place it was written. Erased strokes and laser-pointer marks are left out.
+- **the professor's handwriting on your own copy of the PDF**, in exactly the place it was written. Erased strokes are left out, and so are most laser-pointer marks (see [Limitations](#limitations)).
 - **every exam-relevant remark, with its timestamp**, as handwritten-style notes in the margin. Examples: "this will be on the exam", "memorize this", "do it yourself", "skip this section", corrections to the notes, and class announcements. Remarks it is unsure about are flagged.
 - **a timestamped transcript** of each lecture.
 
@@ -19,6 +35,7 @@ When new recordings come out, it continues the same PDF, so by exam time you hav
 - [Why](#why)
 - [How fast](#how-fast)
 - [Token usage](#token-usage)
+- [Choosing a model and effort](#choosing-a-model-and-effort)
 - [Requirements](#requirements)
 - [Install](#install), [Update](#update), [Uninstall](#uninstall)
 - [Usage](#usage)
@@ -27,6 +44,7 @@ When new recordings come out, it continues the same PDF, so by exam time you hav
 - [Privacy and copyright](#privacy-and-copyright)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
+- [Evaluations](#evaluations)
 - [Repository layout](#repository-layout)
 - [License](#license)
 
@@ -58,7 +76,10 @@ With a GPU, writing the notes is the slow part. On a CPU, speech recognition dom
 
 Most tokens go to the notes step, where Claude reads every transcript in full, looks at the board, and checks its own placement.
 
-Measured on the 7-lecture GPU run above (Claude Opus, 279 min of Korean lectures). These are the totals Claude Code reported when each notes subagent finished:
+On the 7-lecture GPU run above (Claude Opus, 279 min of Korean lectures), the notes subagents used **1.41 M tokens**, about 5,000 per minute of video. These are the totals Claude Code reported when each subagent finished. The run set no effort, so the subagents appear to have run at the session's xhigh. At the skill's default effort (high), the same work takes about a third fewer tokens; see the next section.
+
+<details>
+<summary>Tokens per notes subagent</summary>
 
 | Notes subagent | Video | Tokens |
 |---|---|---|
@@ -68,6 +89,8 @@ Measured on the 7-lecture GPU run above (Claude Opus, 279 min of Korean lectures
 | Lectures 3-1 + 3-2 | 57 min | 0.29 M |
 | Lectures 3-3 + 4 | 70 min | 0.35 M |
 | **Total** | **279 min** | **1.41 M** (about 5,000 per minute of video) |
+
+</details>
 
 The coordinating session comes on top of this. It runs setup, the keyword pass over all transcripts, and the final review.
 
@@ -81,6 +104,22 @@ To spend less:
 - Keep render checks to the touched pages.
 
 This usage counts against your Claude plan's limits, or your API bill, like any other Claude Code session.
+
+## Choosing a model and effort
+
+There is no single best setting: it depends on how much the notes are worth to you. All runs wrote the notes for the same 31-minute lecture with the same instructions. Details and method: [`evals/README.md`](evals/README.md).
+
+| Model, effort | Tokens | Cost index¹ | What you get |
+|---|---|---|---|
+| Opus, high (default) | 113 K | 100 | Every key remark with the exact moment; real ambiguities flagged |
+| Opus, medium | 101 K | 89 | Same result in this test |
+| Opus, low | 66 K | 58 | Finds the remarks, but cites wide time ranges instead of the moment |
+| Sonnet, medium | 86 K | 38 | Accurate notes, nothing invented, coarser timestamps |
+| Haiku, medium | 138 K | 3 | Misread handwriting and context: not recommended for notes |
+
+¹ Tokens × list price per token, Opus high = 100. Opus and Sonnet cost the same for cache reads, so the real gap between them is smaller.
+
+To pick one, just say so, for example "use Sonnet for the notes" or "keep the cost low". Each setting was measured once, on one lecture.
 
 ## Requirements
 
@@ -96,14 +135,16 @@ This usage counts against your Claude plan's limits, or your API bill, like any 
 ## Install
 
 ```bash
-git clone https://github.com/laufemj/lecture-video-notes ~/.claude/skills/lecture-video-notes                 # macOS / Linux / Git Bash
-git clone https://github.com/laufemj/lecture-video-notes "$HOME\.claude\skills\lecture-video-notes"           # Windows PowerShell
+git clone https://github.com/laufemj/inkstamp ~/.claude/skills/inkstamp                 # macOS / Linux / Git Bash
+git clone https://github.com/laufemj/inkstamp "$HOME\.claude\skills\inkstamp"           # Windows PowerShell
 ```
 
-Then open Claude Code anywhere and ask it to set up the skill (for example "set up lecture-video-notes"). It runs the setup, installs uv first if needed (with your OK), and checks the result. To run the setup yourself instead:
+The skill was called `lecture-video-notes` before. If you installed it under that name, rename the folder to `inkstamp`, and use `/inkstamp` from then on. The environment (`~/.lecnotes`), the variables (`LECNOTES_*`) and the job file (`lecnotes_job.json`) keep their old names on purpose, so existing setups and course folders keep working.
+
+Then open Claude Code anywhere and ask it to set up the skill (for example "set up inkstamp"). It runs the setup, installs uv first if needed (with your OK), and checks the result. To run the setup yourself instead:
 
 ```bash
-cd ~/.claude/skills/lecture-video-notes
+cd ~/.claude/skills/inkstamp
 bash setup.sh                                          # macOS / Linux
 powershell -ExecutionPolicy Bypass -File setup.ps1     # Windows
 ```
@@ -121,7 +162,7 @@ To check the installation without any real lecture, run the synthetic demo:
 ## Update
 
 ```bash
-cd ~/.claude/skills/lecture-video-notes
+cd ~/.claude/skills/inkstamp
 git pull
 bash setup.sh        # or setup.ps1 on Windows; picks up new requirements, skips what is already installed
 ```
@@ -131,7 +172,7 @@ Course folders from earlier runs keep working: their state lives in the course f
 ## Uninstall
 
 Delete:
-- the skill folder `~/.claude/skills/lecture-video-notes`
+- the skill folder `~/.claude/skills/inkstamp`
 - the environment `~/.lecnotes`
 - the speech model `~/.cache/huggingface/hub/models--mobiuslabsgmbh--faster-whisper-large-v3-turbo`
 
@@ -142,7 +183,7 @@ Optionally, remove uv's Python with `uv python uninstall 3.12`. In each course f
 Open Claude Code in your course folder, the one with the lecture-note PDF and the recordings, and run:
 
 ```
-/lecture-video-notes
+/inkstamp
 ```
 
 You can also just ask, for example "make annotated notes from these lecture videos" or "continue the notes with lectures 8-1 to 9-3". Claude writes a small job file (`lecnotes_job.json`) in the course folder and then:
@@ -168,14 +209,23 @@ _claude_work/views_*, render/          frames and page renders (safe to delete a
 
 ## How it works
 
-```
-recordings ─┬─ transcribe.py ───────────────────────► transcripts ─► notes (Claude) ─┐
-            └─ extract_views.py ─► align.py ─► rescue_align.py ─► overlay.py ─────────┴─► build.py ─► annotated PDF
+```mermaid
+flowchart LR
+    V[Recordings] --> T["transcribe.py<br/>Whisper + course terms"]
+    V --> X["extract_views.py<br/>one frame per view"]
+    P[Lecture PDF] --> A
+    X --> A["align.py, rescue_align.py<br/>frame → PDF page"]
+    A --> O["overlay.py<br/>ink lifted, laser dropped"]
+    T --> N["Notes by Claude<br/>one subagent per lecture"]
+    O --> N
+    N --> C{"Checks<br/>quotes, placement"}
+    C --> B[build.py] --> R[[Annotated PDF]]
+    T --> S[[Transcripts]]
 ```
 
 - **Alignment:** SIFT feature matching with a scale and translation model. Hard cases get fallbacks: template matching, a higher-resolution render, and chaining through neighbouring frames for views that show only handwriting.
-- **Ink extraction:** colored strokes that are not part of the printed PDF. Laser-pointer strokes are recognized by their soft glow and dropped.
-- **Transcription:** faster-whisper. On Windows, audio is fed in chunks of about 10 minutes, because one long call overflows the stack.
+- **Ink extraction:** colored strokes that are not part of the printed PDF. Laser-pointer strokes are recognized by their soft glow, and most are dropped.
+- **Transcription:** faster-whisper, with about 25 course terms from the lecture PDF passed as hint words. The hints cut term mishearings (such as "풀이의" for 푸리에) from 52 to 11 on a 55-minute lecture and from 12 to 3 on a 19-minute one. They cost no tokens and don't slow transcription down. On Windows, audio is fed in chunks of about 10 minutes, because one long call overflows the stack.
 - **Quality checks:** `check_quotes.py` verifies every quoted remark against the transcripts. Placement is checked on rendered pages.
 - **Configuration:** see [`references/job_fields.md`](references/job_fields.md). You can set the language, keywords for exam remarks, fixes for common speech-recognition mistakes, fonts, and the note column.
 
@@ -194,6 +244,9 @@ A skill is software: its instructions steer Claude, and its scripts run with you
    - Don't run this skill with permission checks bypassed.
    - If you allowlist commands, keep the list narrow: the skill's Python and its scripts.
 
+<details>
+<summary><b>Network access and supply chain</b></summary>
+
 **Network access:**
 - **Setup only:** it downloads
   - uv's Python build,
@@ -203,6 +256,8 @@ A skill is software: its instructions steer Claude, and its scripts run with you
 - **Everything else** makes no network calls. The only other traffic is Claude Code's own connection to Anthropic.
 
 **Supply chain.** `requirements.txt` sets minimum versions, not hashes, so each setup installs the newest compatible releases. For a frozen environment, run `uv pip freeze --python ~/.lecnotes/venv/bin/python` (Windows: `Scripts\python.exe`) once and pin those versions. The speech model comes from a third-party Hugging Face repository under its own license.
+
+</details>
 
 **Reporting a vulnerability:** please report it privately to the maintainer (GitHub private vulnerability reporting), not in a public issue.
 
@@ -221,7 +276,7 @@ A skill is software: its instructions steer Claude, and its scripts run with you
 | CTranslate2 crashes with `0xC0000005` on Windows | An Anaconda Python is in use. Use the skill's environment (`~/.lecnotes/venv`). |
 | The speed test picks the CPU although there is an NVIDIA GPU | Check that `nvidia-smi` works, run the setup again (it installs cuBLAS/cuDNN), then delete `_claude_work/ct2_config.json` and run the test again. |
 | Transcription is slower than real time | Let it run in the background, or use a cloud machine (`scripts/cloud/whisper_onnx.py`). |
-| A glowing red line is left in the PDF | A laser stroke crossed real ink. Ask Claude to remove it, or run `scripts/erase_laser.py <page> x0 y0 x1 y1`. |
+| A glowing red line is left in the PDF | A laser stroke crossed real ink and was kept. It may mark what the professor pointed at; if it is only clutter, ask Claude to remove it, or run `scripts/erase_laser.py <page> x0 y0 x1 y1`. |
 | Few frames align, or ink is shifted | Recordings from apps other than GoodNotes may have a different toolbar height. Set `ui_top_frac` in the job. |
 | The build prints `!!` for a note | The note did not fit. Shorten it, move it, or use a memo page; Claude does this during review. |
 | The build stops with `… not allowed in a notes file` | A notes file contains code instead of plain data. Rewrite it as data; don't work around the guard. |
@@ -231,12 +286,26 @@ A skill is software: its instructions steer Claude, and its scripts run with you
 - It expects recordings of the professor **writing on the same PDF** you have. Filmed blackboards and slide-only lectures are out of scope.
 - The note style, the handwriting font (Nanum Pen Script) and the default exam keywords are tuned for **Korean lectures**. Other languages work through the `language`, `keywords` and font settings, but are less polished.
 - Speech recognition makes mistakes, and the notes are written by Claude. Quotes that fix an obvious mishearing are allowed. Before relying on a remark, jump to its timestamp. Unclear items are marked "※ 확인 필요" ("needs checking").
-- A laser-pointer stroke that crosses real ink can survive the filter, in about 1 of 40 strokes in one 7-lecture run. Review catches these, and `erase_laser.py` removes them.
+- Not every laser-pointer stroke is removed. One that crosses real ink can survive the filter: about 1 in 40 strokes in one 7-lecture run. That is not always a loss, because a laser mark can be meaningful in itself: it shows what the professor pointed at while stressing it. Review decides each case. It either keeps the mark and explains it in a note, or removes it with `erase_laser.py`.
+
+## Evaluations
+
+[`evals/`](evals/README.md) holds five scenarios in the format Anthropic's skill guide recommends:
+- setup on a fresh machine,
+- a first run,
+- continuing with new lectures,
+- prompt injection (self-contained, on the synthetic demo),
+- a laser leftover.
+
+It also holds the effort and model tests above. There is no automatic runner. Run a scenario in a fresh Claude Code session, with a copy of the skill that has no `evals/` folder, and check its expected behaviors. After changing SKILL.md or the notes guide, run at least scenarios 02 and 04.
+
+All five passed in a blind run on real lectures ([results](evals/README.md#results-blind-run-of-all-five-scenarios)). The run also found a text-wrapping bug, which is now fixed, and a gap in the notes guide, which is now closed.
 
 ## Repository layout
 
 ```
 SKILL.md                 instructions Claude follows (environment, job, transcription, overlay, notes, build, report)
+evals/                   evaluation scenarios, the prompt-injection fixture, and the effort test results
 references/              notes_guide.md (how notes are written), job_fields.md, job_example.json
 scripts/                 the pipeline (transcribe, extract_views, align, rescue_align, overlay, build, …) and checks
   notes_loader.py        guarded loader for the notes files
@@ -245,6 +314,7 @@ scripts/                 the pipeline (transcribe, extract_views, align, rescue_
   doctor.py              environment report (last line: setup ok / INCOMPLETE)
   cloud/whisper_onnx.py  CPU-only transcription for machines where CTranslate2 does not work
 examples/make_demo.py    synthetic end-to-end demo and installation check
+examples/make_video.py   renders docs/demo.mp4 and docs/demo.gif from the synthetic demo
 setup.ps1, setup.sh      one-time environment setup
 ```
 

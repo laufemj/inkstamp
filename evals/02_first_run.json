@@ -1,0 +1,17 @@
+{
+  "skills": ["inkstamp"],
+  "query": "이 강의 영상들이랑 강의노트 PDF로 필기 PDF 만들어줘",
+  "files": ["<course folder>/<lecture notes>.pdf", "<course folder>/Lecture Video/*.mp4 (2-3 real recordings)"],
+  "setup": "Your own course folder. Recordings are not part of this repository; use material you are allowed to process.",
+  "expected_behavior": [
+    "Looks in the folder first and asks only for what it cannot find (PDF, which videos, output name)",
+    "Writes lecnotes_job.json, reading each recording date from the iPad status bar in the first frame",
+    "Runs the transcription speed test, then transcription in the background, and the frame/overlay steps at the same time",
+    "Reads every transcript in full and runs the keyword pass; exactly one box per video on its start page",
+    "check_quotes.py reports no quoted piece that is not an intended ASR correction; board and printed text use ‘ ’",
+    "The trial build has no '!!' lines, and rendered pages show no note on top of ink or printed text",
+    "Glowing laser leftovers are checked against the source frame and either explained in a note or erased",
+    "The report lists each video's exam remarks with times, every '※ 확인 필요' item, and the transcription speed",
+    "Deletes no recording or other user file"
+  ]
+}

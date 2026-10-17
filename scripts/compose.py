@@ -80,6 +80,12 @@ def draw_rich(c, x, y, text, size, color):
             hw = pdfmetrics.stringWidth('^', 'Fb', hs * 0.74)
             c.drawString(cx + (w - hw) / 2, yy + size * 0.52, '^')
         cx += w
+def _units(s):   # characters, but markup like ^{2}, _{i}, \h{f} stays whole when a long word is broken
+    for part in TOKEN_RE.split(s):
+        if TOKEN_RE.fullmatch(part):
+            yield part
+        else:
+            yield from part
 def wrap(text, size, width):
     lines = []
     for para in text.split('\n'):
@@ -94,7 +100,7 @@ def wrap(text, size, width):
                 cur = cand
             elif not cur:
                 piece = ''
-                for ch in cand:
+                for ch in _units(cand):
                     if rich_width(piece + ch, size) > avail and piece:
                         lines.append((piece, 0 if first else hang)); first = False; piece = ''
                         avail = width - hang
@@ -105,7 +111,7 @@ def wrap(text, size, width):
                 cur = w
                 if rich_width(cur, size) > width - hang:
                     piece = ''
-                    for ch in cur:
+                    for ch in _units(cur):
                         if rich_width(piece + ch, size) > width - hang and piece:
                             lines.append((piece, hang)); piece = ''
                         piece += ch
