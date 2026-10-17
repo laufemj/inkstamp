@@ -1,0 +1,15 @@
+{
+ "course_dir": "C:\\Users\\me\\Documents\\Calculus 2",
+ "course_title": "2026 Fall Calculus 2",
+ "lecture_pdf": "calculus2_lecture_notes.pdf",
+ "out_pdf": "calculus2_lecture_notes_annotated (Lecture 1-1 to 3-2).pdf",
+ "transcript_dir": "Lecture Video/transcripts",
+ "work_dir": "_claude_work",
+ "language": "ko",
+ "min_page": 1,
+ "videos": [
+  {"key": "L1-1", "file": "Lecture Video/Lecture 1-1.mp4", "date": "2026-09-01"},
+  {"key": "L1-2", "file": "Lecture Video/Lecture 1-2.mp4", "date": "2026-09-03"}
+ ],
+ "asr_fixes": [["저평면", "접평면"]]
+}

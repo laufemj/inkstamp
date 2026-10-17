@@ -1,0 +1,7 @@
+faster-whisper>=1.1
+opencv-python-headless>=4.8,<5
+numpy
+pillow
+pypdf
+pypdfium2
+reportlab
