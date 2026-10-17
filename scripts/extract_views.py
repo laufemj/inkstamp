@@ -1,7 +1,7 @@
 """Pick 'views' from a lecture video: decode keyframes only (PyAV), detect view changes on a downscaled
 gray image (pixel diff or scroll), keep the keyframe just BEFORE each change (= the finished state of that view)
 plus the last keyframe, saved full-res as views_<KEY>/v_<kfidx>_<sec>s.jpg.
-usage: python extract_views.py L7-3 [L8-1 ...] [--max-sec 240] [--out DIR]"""
+usage: python extract_views.py [L7-3 L8-1 ...] [--max-sec 240] [--out DIR]   (default: all job videos)"""
 import sys, os, time
 import av, cv2, numpy as np
 import paths
@@ -44,5 +44,5 @@ if __name__ == '__main__':
     ms = float(args[args.index('--max-sec') + 1]) if '--max-sec' in args else None
     out = args[args.index('--out') + 1] if '--out' in args else None
     keys = [a for k, a in enumerate(args) if not a.startswith('--') and (k == 0 or args[k - 1] not in ('--max-sec', '--out'))]
-    for k in keys:
+    for k in keys or paths.ORDER:
         views(k, ms, out)

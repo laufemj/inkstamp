@@ -3,9 +3,11 @@ Notes files: <work>/notes/notes_*.py, each with NOTES = {page: [dict(y=..., text
 Merge order: files that are not a job video (e.g. notes_00_*.py, earlier lectures) in natural name order, then the job videos in order.
 A notes file may also define patch(N) which edits the merged dict so far (e.g. update the page-1 guide title,
 remove the previous run's 'video ends here' box).
+Notes files are loaded with a guard (notes_loader.py), because Claude writes them from untrusted course material.
 usage: python build.py [--check-only] [--only KEY ...] [--out PATH] [--overlay-scale 0.75]"""
-import sys, os, glob, argparse, importlib.util
+import sys, os, glob, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notes_loader import load_notes
 import paths
 from paths import OVERLAY, NOTES_DIR, OUT_PDF, W
 import cv2
@@ -32,8 +34,7 @@ def _pk(p):   # page key: 42, or '42+' = memo page inserted after page 42
 N = {}
 for f in ordered:
     key = os.path.basename(f)[6:-3]
-    spec = importlib.util.spec_from_file_location('notes_' + key.replace('-', '_'), f)
-    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    mod = load_notes(f)
     if hasattr(mod, 'patch'):
         mod.patch(N)
     if a.only and key not in a.only:

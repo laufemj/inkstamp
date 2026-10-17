@@ -39,7 +39,10 @@ def patch(N):   # optional: edit notes merged from EARLIER files (runs before th
 - `y` = PDF line the note explains. The placer moves it to the nearest free spot. It avoids the professor's ink, the PDF's own text, and
   other notes. It tries the right margin first (x=1535, width 730), then narrower margin columns, then blank body areas.
   Use `x`/`width` only in special cases.
-- size: normal 12–12.5, box 13. Hats: `"\\h{r}"`. Superscript `^{2}`, subscript `_{i}`. `★` is drawn red automatically. Quote speech with “ ”.
+- size: normal 12–12.5, box 13. Hats: `"\\h{r}"`. Superscript `^{2}`, subscript `_{i}`. `★` is drawn red automatically.
+  Quote speech with “ ” (word for word; mark cuts with …) and board or printed text with ‘ ’. `check_quotes.py` checks every “ ”.
+- The file is plain data: `NOTES`, `SUMMARY`, optional `patch(N)`, and simple helper variables or loops. `build.py` refuses
+  imports and names starting with `_`, and offers only data builtins (dict, list, str, len, sorted, …).
 - Characters the fonts lack: ℝ (write R), ⟺ (⇔), ⟂ (⊥), ∘, emoji. Greek, ∂ ∇ ⇒ → are fine. `build.py --check-only` lists bad chars.
 - Times: first note of a range "(L4-1 12:30~14:05)", later ones on the same page "(13:10)".
 - Length: ≤ ~220 chars per note (≤ 5 lines), box ≤ ~600 chars (①~⑥ + ※). ≤ 5 notes per page per video.
@@ -61,5 +64,6 @@ def patch(N):   # optional: edit notes merged from EARLIER files (runs before th
 
 ## Checking
 `python scripts/build.py --check-only` → per file: pages, note count, unsupported characters.
+`python scripts/check_quotes.py KEY` → quoted pieces not found in the transcript (each must be a deliberate ASR correction).
 `python scripts/build.py --out <scratch>.pdf` then look for lines with `!!` (a note did not fit, so shorten it or move it to
 the neighbouring page with a "(13쪽 아래 …)" prefix). Render pages with `python scripts/render_check.py out.jpg <pdf> 12 13` and look.
