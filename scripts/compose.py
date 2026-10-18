@@ -234,6 +234,8 @@ def _set_geometry(w_pt, h_pt, right_edge):
     MEMO_X, MEMO_W = round(215 * s), round(1900 * s) + extra
     return extra * PX
 
+PLACED = []   # every note drawn: dict(note, page key, rect in pt) -> navigation.py (index, links)
+
 def place_notes(c, page, notes, ink_png):
     from paths import RENDER
     pl = PagePlacer2D(ink_png, os.path.join(RENDER, f'page{page}.png') if isinstance(page, int) else None)
@@ -274,6 +276,7 @@ def place_notes(c, page, notes, ink_png):
             d, x0, w, y, h, size = best
         pl.take(x0, w, y, h)
         draw_note(c, x0, y, n['text'], size, w, box=n.get('box', False), title=n.get('title'))
+        PLACED.append(dict(note=n, page=page, rect=(x0 * PX - 4, PAGE_H - (y + h) * PX, (x0 + w) * PX + 4, PAGE_H - y * PX)))
         flag = '' if abs(y - n['y']) < 300 else '  <-- moved'
         report.append(f'  page {page}: x={x0} w={w} y={y} (want {n["y"]}) h={int(h)} size={size} {n["text"][:26]!r}{flag}')
     return report
@@ -297,6 +300,8 @@ def build(notes_by_page, ink_dir, out_path, extra_draw=None):
     reader = PdfReader(SRC)
     writer = PdfWriter()
     report = []
+    PLACED.clear()
+    page_index = {}   # page key (int page, 'P+' memo page) -> index in the output, before navigation pages are inserted
     from paths import RENDER
     # one note column for the whole document: median right edge of the printed text over all pages
     edges = [_text_right_edge(os.path.join(RENDER, f'page{k + 1}.png'), round(float(pg.mediabox.width) / PX), round(float(pg.mediabox.height) / PX))
@@ -314,8 +319,10 @@ def build(notes_by_page, ink_dir, out_path, extra_draw=None):
         has_ink = os.path.exists(ink_png)
         notes = notes_by_page.get(pno, [])
         if not has_ink and not notes:
+            page_index[pno] = len(writer.pages)
             writer.add_page(page)
             if notes_by_page.get(f'{pno}+'):
+                page_index[f'{pno}+'] = len(writer.pages)
                 report += _memo_page(writer, pno, notes_by_page[f'{pno}+'])
             continue
         buf = io.BytesIO()
@@ -332,10 +339,17 @@ def build(notes_by_page, ink_dir, out_path, extra_draw=None):
             page.merge_translated_page(PdfReader(buf).pages[0], float(mb.left), float(mb.bottom))
         else:
             page.merge_page(PdfReader(buf).pages[0])
+        page_index[pno] = len(writer.pages)
         writer.add_page(page)
         memo = notes_by_page.get(f'{pno}+')
         if memo:   # margins of page pno were full -> blank memo page inserted right after it
+            page_index[f'{pno}+'] = len(writer.pages)
             report += _memo_page(writer, pno, memo)
+    import navigation
+    p0 = writer.pages[0].mediabox
+    n_idx = navigation.finish(writer, page_index, PLACED, (float(p0.width), float(p0.height)))
+    if n_idx:
+        report.append(f'  index: {n_idx} page(s) after page 1 (job "index": false to leave out)')
     with open(out_path, 'wb') as f:
         writer.write(f)
     print('\n'.join(report))

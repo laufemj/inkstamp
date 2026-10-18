@@ -114,6 +114,9 @@ PY SC/render_check.py <scratch>/r.jpg <scratch>/trial.pdf 12 13 14 15   # look a
 PY SC/build.py                                    # final -> out_pdf
 PY SC/make_transcripts.py                         # -> transcript_dir/<video name> 전사본.txt
 ```
+The build also adds navigation: index pages "★ 시험 관련 멘트 모아보기" after page 1 (every box's ★ and ※ lines, each a link
+to its page), one bookmark per lecture, page labels that keep the printed numbers (memo pages read "42+"), and, if the job has
+`video_urls`, links from each note to the recording at its timestamp. Render the index pages too (`build.py` prints how many).
 Add mishearings you noticed to the job's `asr_fixes` (only replacements you checked are right in every transcript).
 `build.py` loads notes files with a guard: plain data only, no imports. A `!! … not allowed in a notes file` line means the file
 must be rewritten as plain data. Never work around the guard.

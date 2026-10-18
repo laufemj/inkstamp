@@ -50,6 +50,10 @@ def patch(N):   # optional: edit notes merged from EARLIER files (runs before th
   and memorize remarks, corrections of typos in the notes, and the meaning of board drawings.
 - Exactly **one box per video**, on the page where the video starts. Title "★ Lecture {n} ({m/d}, {min}분) 핵심 & 시험 관련 멘트".
   The last item "※ ..." states whether anything was excluded from the exam scope, or "범위 제외 언급 없음".
+- The box feeds the PDF's index pages and bookmarks (`navigation.py`), so keep its shape: the title starts with "★ Lecture …",
+  one remark per line starting with ①②…, a ★ on the exam-relevant ones, the time "(m:ss…)" inside the line, and the scope line
+  starting with ※. Each ★ line links to the detailed ★ note of the same lecture closest in time (within 2 min), so give the
+  detailed notes their own ★ and time. Notes containing "※ 확인 필요" are listed in a section of their own.
 - End of each video: append "— L4-1 끝 (24:10)" to its last note.
 - Last video of the run: add a box "※ Lecture X (date) 영상은 여기(…)에서 끝남 — {next page/section}부터는 다음 영상"
   at the end position. The next run removes it with `patch()`.

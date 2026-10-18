@@ -20,4 +20,6 @@ Relative paths are relative to `course_dir`.
 | `overlay_base` | no | `"existing"` (default): pages continue from existing ink. `"empty"`: rebuild from blank |
 | `note_column` | no | `[x, width]` of the note column in 200-dpi px. Default: right of the printed text (document median) |
 | `extend_margin` | no | `true` (default): widen pages whose right margin is too narrow for notes |
+| `index` | no | `true` (default): insert the "★ exam-related remarks" index pages after page 1 |
+| `video_urls` | no | `{"L8-3": "https://…?t={t}"}`: notes and index rows of that lecture open the recording at the note's first timestamp (`{t}` = seconds). Keep it for every lecture, not only this run's |
 | `fonts_dir`, `pen_font`, `fallback_font` | no | other fonts (default: NanumPenScript + NotoSansKR in the skill's `fonts/`) |

@@ -39,7 +39,7 @@ for f in ordered:
         mod.patch(N)
     if a.only and key not in a.only:
         for p, lst in mod.NOTES.items():
-            N.setdefault(_pk(p), []).extend(lst)
+            N.setdefault(_pk(p), []).extend(dict(n, src=key) for n in lst)
         continue
     bad = set()
     for p, lst in mod.NOTES.items():
@@ -47,7 +47,7 @@ for f in ordered:
             for ch in n['text'] + (n.get('title') or ''):
                 if ch not in ' \n' and not cm.PEN_CMAP.get(ord(ch), 0) and not fb.get(ord(ch), 0):
                     bad.add(ch)
-        N.setdefault(_pk(p), []).extend(lst)
+        N.setdefault(_pk(p), []).extend(dict(n, src=key) for n in lst)   # src: which notes file (lecture) a note came from
     print(f'{key}: pages {sorted((_pk(p) for p in mod.NOTES), key=str)}, notes {sum(len(v) for v in mod.NOTES.values())}' + (f'  !! UNSUPPORTED CHARS {sorted(bad)}' if bad else ''))
 if a.check_only:
     sys.exit(0)

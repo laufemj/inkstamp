@@ -29,6 +29,7 @@ It is built for courses where the professor teaches by writing on the lecture-no
 - **the professor's handwriting on your own copy of the PDF**, in exactly the place it was written. Erased strokes are left out, and so are most laser-pointer marks (see [Limitations](#limitations)).
 - **every exam-relevant remark, with its timestamp**, as handwritten-style notes in the margin. Examples: "this will be on the exam", "memorize this", "do it yourself", "skip this section", corrections to the notes, and class announcements. Remarks it is unsure about are flagged.
 - **a timestamped transcript** of each lecture.
+- **navigation inside the PDF**: index pages after page 1 collect every exam-relevant remark by lecture, and each line jumps to its page. Each lecture also gets a bookmark. The viewer keeps the printed page numbers, with inserted memo pages labeled "42+". Optionally, each note links to the recording at its timestamp.
 
 When new recordings come out, it continues the same PDF, so by exam time you have one annotated document for the whole course.
 
